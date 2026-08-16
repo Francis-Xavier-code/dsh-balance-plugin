@@ -49,7 +49,7 @@ Charts use Miyu's chart / heat palettes (blue / gold / rose / purple + blue-purp
 ### Prerequisites
 
 - **DeepSeek Harness** installed and running
-- (Optional) DeepSeek API Key — get one at [platform.deepseek.com](https://platform.deepseek.com); if `DEEPSEEK_API_KEY` is already configured on this machine, the plugin **auto-reads it at startup — no manual input required**
+- (Optional) DeepSeek API Key — get one at [platform.deepseek.com](https://platform.deepseek.com); if `DEEPSEEK_API_KEY` is already configured on this machine, the plugin **re-reads it on every poll — changing the key needs no restart, and no manual input is required**
 
 ### One-click install (recommended)
 

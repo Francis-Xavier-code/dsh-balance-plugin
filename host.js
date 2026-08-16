@@ -96,8 +96,27 @@ return {
       return Object.assign({}, base, { ok: true, error: null, balances: balances, low: low })
     }
 
+    // 每次轮询前重新解析自动账户的凭据：更换 DEEPSEEK_API_KEY 后无需重启。
+    // 用户手动设置过 key 的账户（autoKey=false）不会被覆盖。
+    async function refreshAutoKeys() {
+      const credentials = ctx.get('credentials')
+      if (!credentials) return
+      for (const account of state.accounts) {
+        if (!account.autoKey) continue
+        try {
+          const resolved = await credentials.resolve('DEEPSEEK_API_KEY')
+          if (resolved && resolved.value && resolved.value !== account.key) {
+            account.key = resolved.value
+            account.autoSource = resolved.source || 'credentials'
+            console.log('[余额监控] DEEPSEEK_API_KEY 已更新（来源：' + (resolved.source || 'credentials') + '）')
+          }
+        } catch (e) { /* 读取失败则保持上次的值 */ }
+      }
+    }
+
     async function pollAll(signal) {
       if (state.polling) return
+      await refreshAutoKeys()
       const configured = state.accounts.filter((account) => String(account.key || '').trim())
       if (!configured.length) {
         state.last = null
@@ -145,6 +164,7 @@ return {
         name: '自动读取·DSH 凭据',
         key: resolved.value,
         auto: true,
+        autoKey: true,
         autoSource: resolved.source || 'credentials',
       }]
       bump()
@@ -491,7 +511,7 @@ return {
             id: account.id,
             name: account.name,
             hasKey: meta.hasKey,
-            keySource: account.auto ? '自动读取' : meta.source,
+            keySource: account.auto && account.autoKey ? '自动读取' : meta.source,
             keyHint: meta.hint,
             auto: Boolean(account.auto),
             autoSource: account.auto ? String(account.autoSource || '') : '',
@@ -519,9 +539,14 @@ return {
             const previous = state.accounts.find((item) => item.id === account.id)
             const id = previous ? previous.id : 'account-' + (state.nextAccountId++)
             let key = previous ? previous.key : ''
+            // 用户手动输入过 key 的账户不再随凭据文件自动更新
+            let autoKey = previous ? previous.autoKey : false
             if (account.clear === true) key = ''
-            else if (typeof account.key === 'string' && account.key.trim() !== '') key = account.key.trim()
-            return { id: id, name: account.name.trim(), key: key, auto: previous ? previous.auto : false, autoSource: previous ? previous.autoSource : '' }
+            else if (typeof account.key === 'string' && account.key.trim() !== '') {
+              key = account.key.trim()
+              autoKey = false
+            }
+            return { id: id, name: account.name.trim(), key: key, auto: previous ? previous.auto : false, autoKey: autoKey, autoSource: previous ? previous.autoSource : '' }
           })
       }
       if (typeof input.thresholdCny === 'number' && Number.isFinite(input.thresholdCny)) {
