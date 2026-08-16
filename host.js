@@ -2,9 +2,22 @@ return {
   inject: ['timer', 'webServer', 'clientModules', 'credentials'],
   apply(ctx) {
     const shell = ctx.get('shell')
+    const sandboxPolicy = ctx.get('sandboxPolicy')
     const BALANCE_URL = 'https://api.deepseek.com/user/balance'
     const RECHARGE_URL = 'https://platform.deepseek.com/top_up'
     const USAGE_URL = 'https://platform.deepseek.com/usage'
+
+    // On Windows the deployment-default workspace-write confinement cannot
+    // start (SandboxUnavailableError) or breaks curl's schannel TLS; the
+    // balance poll is a fixed read-only GET, so resolve it explicitly.
+    function execPolicy() {
+      if (!sandboxPolicy) return undefined
+      try {
+        return sandboxPolicy.resolve({ mode: 'danger-full-access' })
+      } catch (e) {
+        return undefined
+      }
+    }
 
     const state = {
       accounts: [],
@@ -59,7 +72,14 @@ return {
       const command = 'curl -sS -m 15 -H ' + auth.header + " -H 'Accept: application/json' " + BALANCE_URL
       let text = ''
       try {
-        const spec = shell.resolve({ command: command, timeoutMs: 20000, stdoutMaxBytes: 65536, signal: signal })
+        const policy = execPolicy()
+        const spec = shell.resolve({
+          command: command,
+          timeoutMs: 20000,
+          stdoutMaxBytes: 65536,
+          signal: signal,
+          ...(policy ? { sandboxPolicy: policy } : {}),
+        })
         const result = await shell.run(spec)
         if (result.exitCode !== 0) {
           const detail = (result.stderr.text || result.stdout.text || '').trim().slice(0, 300)
@@ -96,18 +116,38 @@ return {
       return Object.assign({}, base, { ok: true, error: null, balances: balances, low: low })
     }
 
+    // 每次轮询前重新解析自动账户的凭据：更换 DEEPSEEK_API_KEY 后无需重启。
+    // 用户手动设置过 key 的账户（autoKey=false）不会被覆盖。
+    async function refreshAutoKeys() {
+      const credentials = ctx.get('credentials')
+      if (!credentials) return
+      for (const account of state.accounts) {
+        if (!account.autoKey) continue
+        try {
+          const resolved = await credentials.resolve('DEEPSEEK_API_KEY')
+          if (resolved && resolved.value && resolved.value !== account.key) {
+            account.key = resolved.value
+            account.autoSource = resolved.source || 'credentials'
+            console.log('[余额监控] DEEPSEEK_API_KEY 已更新（来源：' + (resolved.source || 'credentials') + '）')
+          }
+        } catch (e) { /* 读取失败则保持上次的值 */ }
+      }
+    }
+
     async function pollAll(signal) {
       if (state.polling) return
-      const configured = state.accounts.filter((account) => String(account.key || '').trim())
-      if (!configured.length) {
-        state.last = null
-        state.pollError = null
-        bump()
-        return
-      }
+      // 先占住 in-flight 守卫再进入 await 段：并发调用不会重复轮询
       state.polling = true
       bump()
       try {
+        await refreshAutoKeys()
+        const configured = state.accounts.filter((account) => String(account.key || '').trim())
+        if (!configured.length) {
+          state.last = null
+          state.pollError = null
+          bump()
+          return
+        }
         const results = await Promise.all(configured.map((account) => fetchAccount(account, signal)))
         const previousLow = new Set((state.last ? state.last.low : []).map((entry) => entry.accountId + ':' + entry.currency))
         const low = []
@@ -145,6 +185,7 @@ return {
         name: '自动读取·DSH 凭据',
         key: resolved.value,
         auto: true,
+        autoKey: true,
         autoSource: resolved.source || 'credentials',
       }]
       bump()
@@ -491,7 +532,7 @@ return {
             id: account.id,
             name: account.name,
             hasKey: meta.hasKey,
-            keySource: account.auto ? '自动读取' : meta.source,
+            keySource: account.auto && account.autoKey ? '自动读取' : meta.source,
             keyHint: meta.hint,
             auto: Boolean(account.auto),
             autoSource: account.auto ? String(account.autoSource || '') : '',
@@ -519,9 +560,14 @@ return {
             const previous = state.accounts.find((item) => item.id === account.id)
             const id = previous ? previous.id : 'account-' + (state.nextAccountId++)
             let key = previous ? previous.key : ''
+            // 用户手动输入过 key 的账户不再随凭据文件自动更新
+            let autoKey = previous ? previous.autoKey : false
             if (account.clear === true) key = ''
-            else if (typeof account.key === 'string' && account.key.trim() !== '') key = account.key.trim()
-            return { id: id, name: account.name.trim(), key: key, auto: previous ? previous.auto : false, autoSource: previous ? previous.autoSource : '' }
+            else if (typeof account.key === 'string' && account.key.trim() !== '') {
+              key = account.key.trim()
+              autoKey = false
+            }
+            return { id: id, name: account.name.trim(), key: key, auto: previous ? previous.auto : false, autoKey: autoKey, autoSource: previous ? previous.autoSource : '' }
           })
       }
       if (typeof input.thresholdCny === 'number' && Number.isFinite(input.thresholdCny)) {

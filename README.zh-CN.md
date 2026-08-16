@@ -49,7 +49,7 @@
 ### 前置条件
 
 - 已安装并运行 **DeepSeek Harness**
-- （可选）DeepSeek API Key —— 可在 [platform.deepseek.com](https://platform.deepseek.com) 获取；若本机已配置 `DEEPSEEK_API_KEY` 凭据，插件启动时**自动读取，无需手动输入**
+- （可选）DeepSeek API Key —— 可在 [platform.deepseek.com](https://platform.deepseek.com) 获取；若本机已配置 `DEEPSEEK_API_KEY` 凭据，插件**每次轮询时自动读取（更换 key 无需重启），无需手动输入**
 
 ### 一键安装（推荐）
 
