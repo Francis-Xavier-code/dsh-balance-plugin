@@ -56,7 +56,10 @@ return {
       const auth = authHeaderFor(account.key)
       if (!auth.ok) return Object.assign({}, base, { ok: false, error: auth.error, balances: [], low: [] })
       if (!shell) return Object.assign({}, base, { ok: false, error: 'Host shell 服务不可用', balances: [], low: [] })
-      const command = 'curl -sS -m 15 -H ' + auth.header + " -H 'Accept: application/json' " + BALANCE_URL
+      // Windows 的 PowerShell 会把 `curl` 解析为 Invoke-WebRequest 别名，`-m` 参数产生二义性；
+      // 显式使用 curl.exe 走系统自带 curl，其余平台沿用 curl。
+      const curlBin = process.platform === 'win32' ? 'curl.exe' : 'curl'
+      const command = curlBin + ' -sS -m 15 -H ' + auth.header + " -H 'Accept: application/json' " + BALANCE_URL
       let text = ''
       try {
         const spec = shell.resolve({ command: command, timeoutMs: 20000, stdoutMaxBytes: 65536, signal: signal })
