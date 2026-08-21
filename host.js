@@ -449,7 +449,8 @@ return {
         const entries = graph && Array.isArray(graph.entries) ? graph.entries : []
         const fs = await import('fs')
         const nodePath = await import('path')
-        const plugins = entries.map((entry) => {
+        const plugins = []
+        for (const entry of entries) {
           const official = String(entry.id || '').startsWith('@deepseek-ai/')
           let pluginPath = ''
           try { pluginPath = modules.clientPath(entry.id) || '' } catch (e) { pluginPath = '' }
@@ -465,7 +466,22 @@ return {
               }
             } catch (e) { /* 读取失败则忽略 */ }
           }
-          return {
+          if (!official && !repository && shell) {
+            try {
+              const cmd = 'npm view ' + String(entry.id || '') + ' repository.url --json 2>/dev/null'
+              const spec = shell.resolve({ command: cmd, timeoutMs: 10000 })
+              const result = await shell.run(spec)
+              if (result.exitCode === 0) {
+                const text = (result.stdout.text || '').trim()
+                if (text) {
+                  const repoData = JSON.parse(text)
+                  repository = typeof repoData === 'string' ? repoData : (repoData && repoData.url ? repoData.url : '')
+                }
+              }
+            } catch (e) { /* npm 查询失败则忽略 */ }
+          }
+          repository = (repository || '').replace(/^git\+/, '').replace(/\.git$/, '')
+          plugins.push({
             id: String(entry.id || ''),
             official: official,
             path: pluginPath,
@@ -474,8 +490,8 @@ return {
             immediately: Boolean(entry.immediately),
             version: version,
             repository: repository,
-          }
-        })
+          })
+        }
         plugins.sort((a, b) => (a.official === b.official ? (a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : a.official ? 1 : -1))
         return {
           rev: graph && graph.rev ? graph.rev : '',
@@ -599,6 +615,66 @@ return {
       } catch (e) {
         return { ok: true, results: [] }
       }
+    })
+
+    harness.handle('get-plugin-info', async (args) => {
+      const pkg = args && typeof args.pkg === 'string' ? args.pkg.trim() : ''
+      if (!shell) return { ok: false, error: '不可用' }
+      if (!pkg) return { ok: false, error: '缺少包名' }
+      try {
+        const cmd = 'npm view ' + pkg + ' name version description repository.url homepage keywords --json 2>/dev/null'
+        const spec = shell.resolve({ command: cmd, timeoutMs: 15000 })
+        const result = await shell.run(spec)
+        if (result.exitCode !== 0) return { ok: false, error: '未找到包：' + pkg }
+        const info = JSON.parse((result.stdout.text || '').trim())
+        const repo = info.repository && info.repository.url ? info.repository.url : ''
+        return {
+          ok: true,
+          name: info.name || pkg,
+          version: info.version || '',
+          description: info.description || '',
+          repository: repo.replace(/^git\+/, '').replace(/\.git$/, ''),
+          homepage: info.homepage || '',
+          keywords: Array.isArray(info.keywords) ? info.keywords : [],
+        }
+      } catch (e) {
+        return { ok: false, error: String(e && e.message || e).slice(0, 300) }
+      }
+    })
+
+    harness.handle('featured-plugins', async () => {
+      const featured = [
+        { pkg: 'dsh-balance-plugin', tag: '💰 余额监控', desc: 'DeepSeek API 余额监控与用量统计' },
+        { pkg: 'dsh-find-plugin', tag: '🔍 插件发现', desc: '在 Agent 内实时搜索 GitHub dsh-plugin 话题下的插件' },
+        { pkg: 'dsh-plugin-marketplace', tag: '🏪 插件市场', desc: 'Web UI 内置插件市场：浏览 GitHub 话题下的插件仓库' },
+        { pkg: 'dsh-plugin-om', tag: '📖 论文阅读', desc: 'DSH 插件：论文阅读助手' },
+        { pkg: 'dsh-plugin-ima-sync', tag: '📤 IMA 同步', desc: '自动上传会话进度到腾讯 IMA' },
+        { pkg: 'dsh-plugin-install', tag: '📥 一键安装', desc: '在设置页直接安装任意 dsh 插件' },
+        { pkg: 'dsh-config-manager', tag: '⚙️ 配置管理', desc: 'DSH 配置备份 / 导出 / 导入 / 迁移' },
+        { pkg: '@linxin666/dsh-live-stats', tag: '📊 实时统计', desc: '实时 token 估算和生成吞吐量' },
+        { pkg: '@linxin666/dsh-ssh', tag: '🔐 SSH 远程', desc: '远程 SSH 操作：主机配置 / 连接 / 命令执行' },
+        { pkg: 'create-dsh-plugin', tag: '🛠 脚手架', desc: '秒级创建 DSH 插件项目模板' },
+      ]
+      if (!shell) return { ok: true, results: featured.map((item) => ({ name: item.pkg, version: '', description: item.desc, repository: '', tag: item.tag })) }
+      const results = []
+      for (const item of featured) {
+        try {
+          const cmd = 'npm view ' + item.pkg + ' version repository.url description --json 2>/dev/null'
+          const spec = shell.resolve({ command: cmd, timeoutMs: 10000 })
+          const result = await shell.run(spec)
+          if (result.exitCode !== 0) continue
+          const info = JSON.parse((result.stdout.text || '').trim())
+          const repo = info.repository && info.repository.url ? info.repository.url : ''
+          results.push({
+            name: item.pkg,
+            version: info.version || '',
+            description: info.description || item.desc,
+            repository: repo.replace(/^git\+/, '').replace(/\.git$/, ''),
+            tag: item.tag,
+          })
+        } catch (e) { /* skip */ }
+      }
+      return { ok: true, results: results }
     })
 
     function getStatePayload() {

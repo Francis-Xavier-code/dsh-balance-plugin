@@ -121,6 +121,13 @@ return {
 .bmon-pg-search{display:flex;gap:8px;align-items:center;margin-bottom:4px;}
 .bmon-pg-search input{flex:1;min-width:0;}
 .bmon-pg-market{border-top:1px solid var(--dsw-alias-border-l1);padding-top:12px;margin-top:8px;}
+.bmon-pg-featured{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;margin-bottom:10px;}
+.bmon-pg-feat-card{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l1);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:4px;min-width:0;transition:border-color .15s;}
+.bmon-pg-feat-card:hover{border-color:var(--dsw-alias-brand-primary);}
+.bmon-pg-feat-head{display:flex;align-items:center;gap:6px;min-width:0;}
+.bmon-pg-feat-name{font-weight:600;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+.bmon-pg-feat-desc{font-size:11px;color:var(--dsw-alias-label-secondary);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.bmon-pg-feat-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;}
 .bmon-pg-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);border-radius:8px;padding:8px 16px;font-size:12px;z-index:2147483001;box-shadow:0 4px 12px rgba(0,0,0,.25);opacity:0;transition:opacity .25s;pointer-events:none;}
 .bmon-pg-toast.show{opacity:1;}
 `)
@@ -248,6 +255,8 @@ return {
       const [searching, setSearching] = React.useState(false)
       const [toast, setToast] = React.useState('')
       const [busyId, setBusyId] = React.useState('')
+      const [featured, setFeatured] = React.useState([])
+      const [featuredLoading, setFeaturedLoading] = React.useState(true)
       const toastTimer = React.useRef(null)
       const showToast = React.useCallback((msg) => {
         setToast(msg)
@@ -259,6 +268,13 @@ return {
         host.call('list-plugins', {}).then((value) => { if (alive && value && typeof value === 'object') setData(value) }).catch(() => {})
         return () => { alive = false }
       }, [seq])
+      React.useEffect(() => {
+        let alive = true
+        host.call('featured-plugins', {}).then((v) => {
+          if (alive && v && v.ok) setFeatured(v.results || [])
+        }).catch(() => {}).finally(() => { if (alive) setFeaturedLoading(false) })
+        return () => { alive = false }
+      }, [])
       function handleSearch() {
         const q = searchQuery.trim()
         if (!q) return
@@ -394,6 +410,19 @@ return {
       children.push(React.createElement('div', { key: 'market', className: 'bmon-pg-market' },
         React.createElement('div', { className: 'bmon-pg-market-title' }, '🏪 插件市场'),
         React.createElement('div', { className: 'bmon-hint', style: { marginBottom: 8 } }, '搜索 npm 注册表中的 DSH 插件（关键词：deepseek-harness / dsh / cordis）'),
+        featuredLoading ? React.createElement('div', { className: 'bmon-hint', style: { marginBottom: 8 } }, '正在加载推荐插件…') : (featured.length ? React.createElement('div', { className: 'bmon-pg-featured' },
+          ...featured.map((item) => React.createElement('div', { key: item.name, className: 'bmon-pg-feat-card' },
+            React.createElement('div', { className: 'bmon-pg-feat-head' },
+              React.createElement('span', { className: 'bmon-pg-feat-name' }, item.tag + ' ' + item.name),
+              item.version ? React.createElement('span', { className: 'bmon-badge', style: { fontSize: 9, flex: 'none' } }, 'v' + item.version) : null,
+            ),
+            React.createElement('div', { className: 'bmon-pg-feat-desc' }, item.description || ''),
+            React.createElement('div', { className: 'bmon-pg-feat-actions' },
+              React.createElement('button', { type: 'button', className: 'bmon-pg-primary', disabled: !!busyId, onClick: () => handleInstall(item.name) }, busyId === item.name ? '⏳…' : '📥 安装'),
+              item.repository ? React.createElement('a', { href: item.repository, target: '_blank', rel: 'noopener' }, '🔗 仓库') : null,
+            ),
+          ))
+        ) : null),
         React.createElement('div', { className: 'bmon-pg-search' },
           React.createElement('input', { type: 'text', className: 'bmon-input', placeholder: '输入关键词搜索…', value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), onKeyDown: (e) => { if (e.key === 'Enter') handleSearch() } }),
           React.createElement('button', { type: 'button', className: 'bmon-primary', disabled: searching || !searchQuery.trim(), onClick: handleSearch }, searching ? '搜索中…' : '🔍 搜索'),
