@@ -12,6 +12,13 @@
 
 [✨ Features](#-features) · [🖼 Screenshots](#-screenshots) · [📥 Install](#-install) · [⚙️ Configuration](#️-configuration) · [🎮 Usage](#-usage) · [🗑 Uninstall](#-uninstall) · [🏗 Architecture](#-architecture) · [❓ FAQ](#-faq)
 
+### Platform Support
+
+| Platform | Install | Uninstall |
+| --- | --- | --- |
+| **macOS / Linux** | `curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh \| bash` | `curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.sh \| bash` |
+| **Windows** | `irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 \| iex` | `irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.ps1 \| iex` |
+
 </div>
 
 ---
@@ -53,9 +60,16 @@ Charts use Miyu's chart / heat palettes (blue / gold / rose / purple + blue-purp
 
 ### One-click install (recommended)
 
+**macOS / Linux:**
 ```bash
 # Installs automatically (install deps → write compose patch → prompt restart)
 curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+# Installs automatically (install deps → write compose patch → prompt restart)
+irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 | iex
 ```
 
 **Restart DeepSeek Harness** after installation — three icon buttons appear on the right of the input box. Use `DSH_PROFILE=<name>` to target another profile.
@@ -108,9 +122,16 @@ All panels are centered overlays: click the backdrop or "✕ Close" to exit.
 
 ## 🗑 Uninstall
 
+**macOS / Linux:**
 ```bash
 # One-click uninstall (removes dependency + cleans the compose patch)
 curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+# One-click uninstall (removes dependency + cleans the compose patch)
+irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.ps1 | iex
 ```
 
 Manual equivalent:
@@ -139,6 +160,10 @@ Client (browser)
 ├─ Entry: 3 SVG icon buttons on the right of the input toolbar
 ├─ Overlays: self-rendered fixed panels inside the component (no overlay slot dependency)
 └─ Charts: Miyu chart/heat palettes, dark/light adaptive
+
+Platform Support:
+├─ macOS / Linux: install.sh / uninstall.sh (Bash scripts)
+└─ Windows: install.ps1 / uninstall.ps1 (PowerShell scripts)
 ```
 
 ---
@@ -163,9 +188,12 @@ A: The plugin scans session events from the last 90 days at startup; "avg first 
 **Q: Why not use `dsh plugin add dsh-balance-plugin`?**
 A: A third party owns a same-named package on npm (`dsh-balance-plugin@0.1.0`), so the bare name would install the wrong one. Use the one-click script or the `github:` source (see [Install](#-install)).
 
+**Q: Windows installation fails?**
+A: Ensure you're running PowerShell as Administrator. If execution policy blocks the script, run: `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+
 ---
 
-## 💬 QQ Community
+## 💬 Community
 
 <div align="center">
   <img src="assess/qq-qun.png" alt="QQ Community" width="220" />

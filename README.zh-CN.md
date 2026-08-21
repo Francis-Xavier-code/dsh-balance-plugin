@@ -12,6 +12,13 @@
 
 [✨ 功能](#-功能) · [🖼 界面预览](#-界面预览) · [📥 安装](#-安装) · [⚙️ 配置](#️-配置) · [🎮 使用](#-使用) · [🗑 卸载](#-卸载) · [🏗 架构](#-架构) · [❓ FAQ](#-常见问题)
 
+### 平台支持
+
+| 平台 | 安装 | 卸载 |
+| --- | --- | --- |
+| **macOS / Linux** | `curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh \| bash` | `curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.sh \| bash` |
+| **Windows** | `irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 \| iex` | `irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.ps1 \| iex` |
+
 </div>
 
 ---
@@ -53,9 +60,16 @@
 
 ### 一键安装（推荐）
 
+**macOS / Linux:**
 ```bash
 # 安装（自动：装依赖 → 写组合 patch → 提示重启）
 curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+# 安装（自动：装依赖 → 写组合 patch → 提示重启）
+irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 | iex
 ```
 
 安装完成后**重启 DeepSeek Harness**，输入框右侧出现三个图标按钮即生效。可用 `DSH_PROFILE=<name>` 指定其他 profile。
@@ -108,9 +122,16 @@ dsh plugin --profile web add github:Francis-Xavier-code/dsh-balance-plugin
 
 ## 🗑 卸载
 
+**macOS / Linux:**
 ```bash
 # 一键卸载（移除依赖 + 清理组合 patch）
 curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+# 一键卸载（移除依赖 + 清理组合 patch）
+irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.ps1 | iex
 ```
 
 手动等效：
@@ -139,6 +160,10 @@ Client（浏览器）
 ├─ 入口：输入框工具行右侧 3 个 SVG 图标按钮
 ├─ 浮层：组件内自渲染 fixed 面板（不依赖 overlay 槽位）
 └─ 图表：Miyu chart/heat 色板，深色/浅色自适应
+
+平台支持：
+├─ macOS / Linux：install.sh / uninstall.sh（Bash 脚本）
+└─ Windows：install.ps1 / uninstall.ps1（PowerShell 脚本）
 ```
 
 ---
@@ -163,9 +188,12 @@ A：插件启动时扫描近 90 天会话事件；「首 token 平均」仅统�
 **Q：为什么不用 `dsh plugin add dsh-balance-plugin`？**
 A：npm 上存在他人同名包（`dsh-balance-plugin@0.1.0`），裸包名会装错。请使用一键脚本或 `github:` 源（见[安装](#-安装)）。
 
+**Q：Windows 安装失败？**
+A：确保以管理员身份运行 PowerShell。如果执行策略阻止脚本，请运行：`Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
+
 ---
 
-## 💬 QQ交流群
+## 💬 社区交流
 
 <div align="center">
   <img src="assess/qq-qun.png" alt="QQ交流群" width="220" />
