@@ -310,9 +310,14 @@ return {
         }).catch(() => showToast('❌ 更新失败')).finally(() => setBusyId(''))
       }
       function openRepo(plugin) {
-        const id = plugin.id || ''
-        const guess = 'https://github.com/' + id.replace(/^@[^/]+\//, '')
-        window.open(guess, '_blank', 'noopener')
+        let url = plugin.repository || ''
+        if (url) {
+          url = url.replace(/^git\+/, '').replace(/\.git$/, '')
+        } else {
+          const id = plugin.id || ''
+          url = 'https://github.com/' + id.replace(/^@[^/]+\//, '')
+        }
+        if (url) window.open(url, '_blank', 'noopener')
       }
       const children = []
       children.push(React.createElement('div', { key: 'title', className: 'bmon-title' }, '插件管理'))
@@ -333,6 +338,13 @@ return {
         React.createElement('button', { type: 'button', className: 'bmon-btn', onClick: () => setSeq((n) => n + 1) }, '↻ 刷新'),
       ))
       function renderPluginCard(plugin) {
+        const [updateInfo, setUpdateInfo] = React.useState(null)
+        React.useEffect(() => {
+          if (!plugin.version || plugin.official) return
+          host.call('check-updates', { pkg: plugin.id, localVersion: plugin.version }).then((v) => {
+            if (v && v.ok && v.hasUpdate) setUpdateInfo(v)
+          }).catch(() => {})
+        }, [plugin.id, plugin.version])
         const actions = []
         actions.push(React.createElement('button', { key: 'dir', type: 'button', disabled: !plugin.path, onClick: () => { host.call('open-plugin-dir', { id: plugin.id }).then((v) => { if (v && v.error) console.log('[余额监控] open dir:', v.error) }).catch(() => {}) } }, '📁 目录'))
         if (!plugin.official) {
@@ -343,13 +355,20 @@ return {
         const nameParts = []
         if (!plugin.official) nameParts.push(React.createElement('span', { className: 'bmon-badge bmon-badge-third' }, '三方'))
         nameParts.push(React.createElement('span', null, plugin.id))
+        if (plugin.version) nameParts.push(React.createElement('span', { className: 'bmon-badge', style: { fontSize: 9 } }, 'v' + plugin.version))
         const deps = (plugin.inject || []).length ? plugin.inject.join(', ') : '无'
+        const versionLine = React.createElement('div', { className: 'bmon-pg-card-meta' },
+          React.createElement('span', null, 'rev: ' + (plugin.rev || '—')),
+          React.createElement('span', null, '依赖: ' + deps),
+        )
+        const updateHint = updateInfo ? React.createElement('div', { className: 'bmon-pg-card-meta', style: { color: 'var(--bmon-accent, #f0ad4e)' } },
+          React.createElement('span', null, '⬆ 可更新到 ' + updateInfo.remoteVersion),
+          React.createElement('button', { type: 'button', className: 'bmon-pg-update', style: { marginLeft: 8 }, disabled: !!busyId, onClick: () => handleUpdate(plugin.id) }, busyId === plugin.id ? '⏳…' : '🔄 立即更新'),
+        ) : null
         return React.createElement('div', { key: plugin.id, className: 'bmon-pg-card' },
           React.createElement('div', { className: 'bmon-pg-card-name' }, ...nameParts),
-          React.createElement('div', { className: 'bmon-pg-card-meta' },
-            React.createElement('span', null, 'rev: ' + (plugin.rev || '—')),
-            React.createElement('span', null, '依赖: ' + deps),
-          ),
+          versionLine,
+          updateHint,
           React.createElement('div', { className: 'bmon-pg-card-meta' },
             React.createElement('span', { style: { wordBreak: 'break-all', maxWidth: '100%', flex: '1 0 100%' } }, plugin.path || '—'),
           ),

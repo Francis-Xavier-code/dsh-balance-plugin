@@ -447,17 +447,33 @@ return {
       try {
         const graph = modules.graph()
         const entries = graph && Array.isArray(graph.entries) ? graph.entries : []
+        const fs = await import('fs')
+        const nodePath = await import('path')
         const plugins = entries.map((entry) => {
           const official = String(entry.id || '').startsWith('@deepseek-ai/')
-          let path = ''
-          try { path = modules.clientPath(entry.id) || '' } catch (e) { path = '' }
+          let pluginPath = ''
+          try { pluginPath = modules.clientPath(entry.id) || '' } catch (e) { pluginPath = '' }
+          let version = ''
+          let repository = ''
+          if (pluginPath) {
+            try {
+              const pkgJsonPath = nodePath.join(nodePath.dirname(pluginPath), 'package.json')
+              if (fs.existsSync(pkgJsonPath)) {
+                const pkgData = JSON.parse(fs.readFileSync(pkgJsonPath, 'utf8'))
+                version = pkgData.version || ''
+                repository = pkgData.repository && pkgData.repository.url ? pkgData.repository.url : ''
+              }
+            } catch (e) { /* 读取失败则忽略 */ }
+          }
           return {
             id: String(entry.id || ''),
             official: official,
-            path: path,
+            path: pluginPath,
             rev: String(entry.rev || '').slice(0, 8),
             inject: Array.isArray(entry.inject) ? entry.inject : [],
             immediately: Boolean(entry.immediately),
+            version: version,
+            repository: repository,
           }
         })
         plugins.sort((a, b) => (a.official === b.official ? (a.id < b.id ? -1 : a.id > b.id ? 1 : 0) : a.official ? 1 : -1))
@@ -528,17 +544,33 @@ return {
       if (!shell || !pkg) return { ok: false, error: '缺少包名' }
       const profile = process.env.DSH_PROFILE || 'web'
       try {
-        const rmCmd = 'dsh plugin --profile ' + profile + ' rm ' + pkg
-        await shell.run(shell.resolve({ command: rmCmd, timeoutMs: 60000 }))
+        const rmCmd = 'dsh plugin --profile ' + profile + ' rm ' + pkg + ' 2>/dev/null || true'
+        await shell.run(shell.resolve({ command: rmCmd, timeoutMs: 30000 }))
         const addCmd = 'dsh plugin --profile ' + profile + ' add ' + pkg
         const spec = shell.resolve({ command: addCmd, timeoutMs: 120000 })
         const result = await shell.run(spec)
         const out = (result.stdout.text || '').trim()
         const err = (result.stderr.text || '').trim()
-        if (result.exitCode !== 0) return { ok: false, error: (err || out || '更新失败').slice(0, 500) }
-        return { ok: true, output: out.slice(0, 500) }
+        if (result.exitCode !== 0) return { ok: false, error: (err || out || '更新失败').slice(0, 500), output: (out || err || '').slice(0, 500) }
+        return { ok: true, output: out.slice(0, 500), error: '' }
       } catch (e) {
         return { ok: false, error: String(e && e.message || e).slice(0, 300) }
+      }
+    })
+    harness.handle('check-updates', async (args) => {
+      const pkg = args && typeof args.pkg === 'string' ? args.pkg.trim() : ''
+      const localVersion = args && typeof args.localVersion === 'string' ? args.localVersion.trim() : ''
+      if (!shell || !pkg) return { ok: false, error: '缺少包名' }
+      try {
+        const cmd = 'npm view ' + pkg + ' version 2>/dev/null'
+        const spec = shell.resolve({ command: cmd, timeoutMs: 15000 })
+        const result = await shell.run(spec)
+        const remoteVersion = (result.stdout.text || '').trim()
+        if (!remoteVersion || result.exitCode !== 0) return { ok: true, hasUpdate: false, remoteVersion: '' }
+        const hasUpdate = localVersion && remoteVersion && localVersion !== remoteVersion
+        return { ok: true, hasUpdate: hasUpdate, remoteVersion: remoteVersion, localVersion: localVersion }
+      } catch (e) {
+        return { ok: true, hasUpdate: false, remoteVersion: '' }
       }
     })
 
