@@ -337,7 +337,7 @@ return {
         React.createElement('span', { className: 'bmon-hint' }, '合计 ' + data.total + ' 个 Web 插件'),
         React.createElement('button', { type: 'button', className: 'bmon-btn', onClick: () => setSeq((n) => n + 1) }, '↻ 刷新'),
       ))
-      function renderPluginCard(plugin) {
+      function PluginCard({ plugin }) {
         const [updateInfo, setUpdateInfo] = React.useState(null)
         React.useEffect(() => {
           if (!plugin.version || plugin.official) return
@@ -378,7 +378,7 @@ return {
       if (third.length) {
         children.push(React.createElement('div', { key: 'third-label', className: 'bmon-section' }, '第三方插件'))
         children.push(React.createElement('div', { key: 'third-grid', className: 'bmon-pg-grid' },
-          ...third.map((p) => renderPluginCard(p))
+          ...third.map((p) => React.createElement(PluginCard, { key: p.id, plugin: p }))
         ))
       } else {
         children.push(React.createElement('div', { key: 'empty', className: 'bmon-u-empty' }, '未发现第三方插件'))
@@ -387,7 +387,7 @@ return {
         children.push(React.createElement('details', { key: 'official', style: { marginTop: 8 } },
           React.createElement('summary', { className: 'bmon-section', style: { cursor: 'pointer' } }, '官方插件（' + official.length + '）'),
           React.createElement('div', { className: 'bmon-pg-grid', style: { marginTop: 8 } },
-            ...official.map((p) => renderPluginCard(p))
+            ...official.map((p) => React.createElement(PluginCard, { key: p.id, plugin: p }))
           ),
         ))
       }
