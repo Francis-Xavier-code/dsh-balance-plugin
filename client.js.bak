@@ -243,79 +243,15 @@ return {
       const data = pair[0]
       const setData = pair[1]
       const [seq, setSeq] = React.useState(0)
-      const [searchQuery, setSearchQuery] = React.useState('')
-      const [searchResults, setSearchResults] = React.useState([])
-      const [searching, setSearching] = React.useState(false)
-      const [toast, setToast] = React.useState('')
-      const [busyId, setBusyId] = React.useState('')
-      const toastTimer = React.useRef(null)
-      const showToast = React.useCallback((msg) => {
-        setToast(msg)
-        if (toastTimer.current) clearTimeout(toastTimer.current)
-        toastTimer.current = setTimeout(() => setToast(''), 2500)
-      }, [])
       React.useEffect(() => {
         let alive = true
         host.call('list-plugins', {}).then((value) => { if (alive && value && typeof value === 'object') setData(value) }).catch(() => {})
         return () => { alive = false }
       }, [seq])
-      function handleSearch() {
-        const q = searchQuery.trim()
-        if (!q) return
-        setSearching(true)
-        host.call('search-plugins', { query: q }).then((v) => {
-          if (v && v.ok) setSearchResults(v.results || [])
-        }).catch(() => {}).finally(() => setSearching(false))
-      }
-      function handleInstall(pkg) {
-        if (!pkg || busyId) return
-        setBusyId(pkg)
-        showToast('正在安装 ' + pkg + '…')
-        host.call('install-plugin', { pkg: pkg }).then((v) => {
-          if (v && v.ok) {
-            showToast('✅ ' + pkg + ' 安装成功')
-            setSearchResults([])
-            setSearchQuery('')
-            setSeq((n) => n + 1)
-          } else {
-            showToast('❌ 安装失败：' + (v && v.error || '未知错误'))
-          }
-        }).catch(() => showToast('❌ 安装失败')).finally(() => setBusyId(''))
-      }
-      function handleUninstall(pkg) {
-        if (!pkg || busyId) return
-        if (!confirm('确定卸载 ' + pkg + '？')) return
-        setBusyId(pkg)
-        showToast('正在卸载 ' + pkg + '…')
-        host.call('uninstall-plugin', { pkg: pkg }).then((v) => {
-          if (v && v.ok) {
-            showToast('✅ ' + pkg + ' 已卸载')
-            setSeq((n) => n + 1)
-          } else {
-            showToast('❌ 卸载失败：' + (v && v.error || '未知错误'))
-          }
-        }).catch(() => showToast('❌ 卸载失败')).finally(() => setBusyId(''))
-      }
-      function handleUpdate(pkg) {
-        if (!pkg || busyId) return
-        setBusyId(pkg)
-        showToast('正在更新 ' + pkg + '…')
-        host.call('update-plugin', { pkg: pkg }).then((v) => {
-          if (v && v.ok) {
-            showToast('✅ ' + pkg + ' 更新成功')
-            setSeq((n) => n + 1)
-          } else {
-            showToast('❌ 更新失败：' + (v && v.error || '未知错误'))
-          }
-        }).catch(() => showToast('❌ 更新失败')).finally(() => setBusyId(''))
-      }
-      function openRepo(plugin) {
-        const id = plugin.id || ''
-        const guess = 'https://github.com/' + id.replace(/^@[^/]+\//, '')
-        window.open(guess, '_blank', 'noopener')
-      }
       const children = []
-      children.push(React.createElement('div', { key: 'title', className: 'bmon-title' }, '插件管理'))
+      children.push(React.createElement('div', { key: 'title', className: 'bmon-title' }, '三方插件管理'))
+      children.push(React.createElement('div', { key: 'hint', className: 'bmon-hint' },
+        '非 DeepSeek Harness 官方（@deepseek-ai）的 Web 插件清单。点击「打开目录」可在访达中定位插件源码目录。'))
       if (!data) {
         children.push(React.createElement('div', { key: 'loading', className: 'bmon-hint' }, '正在读取插件表…'))
         return React.createElement('div', { className: 'bmon-page' }, ...children)
@@ -329,80 +265,51 @@ return {
       children.push(React.createElement('div', { key: 'stats', className: 'bmon-row' },
         React.createElement('span', { className: 'bmon-badge bmon-badge-third' }, '三方 ' + third.length),
         React.createElement('span', { className: 'bmon-badge' }, '官方 ' + official.length),
-        React.createElement('span', { className: 'bmon-hint' }, '合计 ' + data.total + ' 个 Web 插件'),
+        React.createElement('span', { className: 'bmon-hint' }, '合计 ' + data.total + ' 个 Web 插件 · 图版本 ' + String(data.rev || '').slice(0, 8)),
         React.createElement('button', { type: 'button', className: 'bmon-btn', onClick: () => setSeq((n) => n + 1) }, '↻ 刷新'),
       ))
-      function renderPluginCard(plugin) {
-        const actions = []
-        actions.push(React.createElement('button', { key: 'dir', type: 'button', disabled: !plugin.path, onClick: () => { host.call('open-plugin-dir', { id: plugin.id }).then((v) => { if (v && v.error) console.log('[余额监控] open dir:', v.error) }).catch(() => {}) } }, '📁 目录'))
-        if (!plugin.official) {
-          actions.push(React.createElement('button', { key: 'repo', type: 'button', onClick: () => openRepo(plugin) }, '🔗 仓库'))
-          actions.push(React.createElement('button', { key: 'update', type: 'button', className: 'bmon-pg-update', disabled: !!busyId, onClick: () => handleUpdate(plugin.id) }, busyId === plugin.id ? '⏳…' : '🔄 更新'))
-          actions.push(React.createElement('button', { key: 'uninstall', type: 'button', className: 'bmon-pg-danger', disabled: !!busyId, onClick: () => handleUninstall(plugin.id) }, '🗑 卸载'))
-        }
-        const nameParts = []
-        if (!plugin.official) nameParts.push(React.createElement('span', { className: 'bmon-badge bmon-badge-third' }, '三方'))
-        nameParts.push(React.createElement('span', null, plugin.id))
-        const deps = (plugin.inject || []).length ? plugin.inject.join(', ') : '无'
-        return React.createElement('div', { key: plugin.id, className: 'bmon-pg-card' },
-          React.createElement('div', { className: 'bmon-pg-card-name' }, ...nameParts),
-          React.createElement('div', { className: 'bmon-pg-card-meta' },
-            React.createElement('span', null, 'rev: ' + (plugin.rev || '—')),
-            React.createElement('span', null, '依赖: ' + deps),
-          ),
-          React.createElement('div', { className: 'bmon-pg-card-meta' },
-            React.createElement('span', { style: { wordBreak: 'break-all', maxWidth: '100%', flex: '1 0 100%' } }, plugin.path || '—'),
-          ),
-          React.createElement('div', { className: 'bmon-pg-card-actions' }, ...actions),
-        )
-      }
-      if (third.length) {
-        children.push(React.createElement('div', { key: 'third-label', className: 'bmon-section' }, '第三方插件'))
-        children.push(React.createElement('div', { key: 'third-grid', className: 'bmon-pg-grid' },
-          ...third.map((p) => renderPluginCard(p))
-        ))
-      } else {
+      if (!third.length) {
         children.push(React.createElement('div', { key: 'empty', className: 'bmon-u-empty' }, '未发现第三方插件'))
+      } else {
+        const rows = third.map((plugin) => {
+          const cells = [
+            React.createElement('td', { key: 'id' }, React.createElement('span', { className: 'bmon-badge bmon-badge-third' }, '三方'), ' ', plugin.id),
+            React.createElement('td', { key: 'rev' }, String(plugin.rev || '—')),
+            React.createElement('td', { key: 'inject' }, (plugin.inject || []).length ? plugin.inject.join(', ') : '—'),
+            React.createElement('td', { key: 'path', className: 'bmon-hint', style: { wordBreak: 'break-all', maxWidth: 320 } }, plugin.path || '—'),
+            React.createElement('td', { key: 'op' }, React.createElement('button', { type: 'button', className: 'bmon-btn', disabled: !plugin.path, onClick: () => { host.call('open-plugin-dir', { id: plugin.id }).catch(() => {}) } }, '打开目录')),
+          ]
+          return React.createElement('tr', { key: plugin.id }, ...cells)
+        })
+        children.push(React.createElement('table', { key: 'table', className: 'bmon-table' },
+          React.createElement('thead', null, React.createElement('tr', { key: 'h' },
+            React.createElement('th', { key: 'id' }, '插件'),
+            React.createElement('th', { key: 'rev' }, 'Bundle rev'),
+            React.createElement('th', { key: 'inject' }, '依赖'),
+            React.createElement('th', { key: 'path' }, '本地路径'),
+            React.createElement('th', { key: 'op' }, '操作'),
+          )),
+          React.createElement('tbody', null, ...rows),
+        ))
       }
       if (official.length) {
-        children.push(React.createElement('details', { key: 'official', style: { marginTop: 8 } },
+        const officialRows = official.map((plugin) =>
+          React.createElement('tr', { key: plugin.id },
+            React.createElement('td', null, plugin.id),
+            React.createElement('td', null, String(plugin.rev || '—')),
+            React.createElement('td', null, plugin.path || '—'),
+          ))
+        children.push(React.createElement('details', { key: 'official' },
           React.createElement('summary', { className: 'bmon-section', style: { cursor: 'pointer' } }, '官方插件（' + official.length + '）'),
-          React.createElement('div', { className: 'bmon-pg-grid', style: { marginTop: 8 } },
-            ...official.map((p) => renderPluginCard(p))
+          React.createElement('table', { className: 'bmon-table' },
+            React.createElement('thead', null, React.createElement('tr', { key: 'h' },
+              React.createElement('th', null, '插件'),
+              React.createElement('th', null, 'Bundle rev'),
+              React.createElement('th', null, '本地路径'),
+            )),
+            React.createElement('tbody', null, ...officialRows),
           ),
         ))
-      }
-      children.push(React.createElement('div', { key: 'market', className: 'bmon-pg-market' },
-        React.createElement('div', { className: 'bmon-pg-market-title' }, '🏪 插件市场'),
-        React.createElement('div', { className: 'bmon-hint', style: { marginBottom: 8 } }, '搜索 npm 注册表中的 DSH 插件（关键词：deepseek-harness / dsh / cordis）'),
-        React.createElement('div', { className: 'bmon-pg-search' },
-          React.createElement('input', { type: 'text', className: 'bmon-input', placeholder: '输入关键词搜索…', value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), onKeyDown: (e) => { if (e.key === 'Enter') handleSearch() } }),
-          React.createElement('button', { type: 'button', className: 'bmon-primary', disabled: searching || !searchQuery.trim(), onClick: handleSearch }, searching ? '搜索中…' : '🔍 搜索'),
-        ),
-      ))
-      if (searchResults.length) {
-        children.push(React.createElement('div', { key: 'sresults', className: 'bmon-pg-grid' },
-          ...searchResults.map((item) =>
-            React.createElement('div', { key: item.name, className: 'bmon-pg-card' },
-              React.createElement('div', { className: 'bmon-pg-card-name' },
-                React.createElement('span', null, item.name),
-                React.createElement('span', { className: 'bmon-badge', style: { fontSize: 9 } }, item.version),
-              ),
-              React.createElement('div', { className: 'bmon-pg-card-desc' }, item.description || '无描述'),
-              React.createElement('div', { className: 'bmon-pg-card-meta' },
-                item.author ? React.createElement('span', null, '👤 ' + item.author) : null,
-                item.score > 0 ? React.createElement('span', null, '⭐ ' + (item.score * 100).toFixed(0) + '%') : null,
-              ),
-              React.createElement('div', { className: 'bmon-pg-card-actions' },
-                React.createElement('button', { type: 'button', className: 'bmon-pg-primary', disabled: !!busyId, onClick: () => handleInstall(item.name) }, busyId === item.name ? '⏳…' : '📥 安装'),
-                item.repository ? React.createElement('a', { href: item.repository.replace(/^git\+/, '').replace(/\.git$/, ''), target: '_blank', rel: 'noopener' }, '🔗 仓库') : null,
-              ),
-            )
-          )
-        ))
-      }
-      if (toast) {
-        children.push(React.createElement('div', { key: 'toast', className: 'bmon-pg-toast' + (toast ? ' show' : '') }, toast))
       }
       return React.createElement('div', { className: 'bmon-page' }, ...children)
     }

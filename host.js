@@ -489,6 +489,86 @@ return {
       }
     })
 
+    harness.handle('install-plugin', async (args) => {
+      const pkg = args && typeof args.pkg === 'string' ? args.pkg.trim() : ''
+      if (!shell || !pkg) return { ok: false, error: '缺少包名' }
+      const profile = process.env.DSH_PROFILE || 'web'
+      try {
+        const cmd = 'dsh plugin --profile ' + profile + ' add ' + pkg
+        const spec = shell.resolve({ command: cmd, timeoutMs: 120000 })
+        const result = await shell.run(spec)
+        const out = (result.stdout.text || '').trim()
+        const err = (result.stderr.text || '').trim()
+        if (result.exitCode !== 0) return { ok: false, error: (err || out || '安装失败').slice(0, 500) }
+        return { ok: true, output: out.slice(0, 500) }
+      } catch (e) {
+        return { ok: false, error: String(e && e.message || e).slice(0, 300) }
+      }
+    })
+
+    harness.handle('uninstall-plugin', async (args) => {
+      const pkg = args && typeof args.pkg === 'string' ? args.pkg.trim() : ''
+      if (!shell || !pkg) return { ok: false, error: '缺少包名' }
+      const profile = process.env.DSH_PROFILE || 'web'
+      try {
+        const cmd = 'dsh plugin --profile ' + profile + ' rm ' + pkg
+        const spec = shell.resolve({ command: cmd, timeoutMs: 60000 })
+        const result = await shell.run(spec)
+        const out = (result.stdout.text || '').trim()
+        const err = (result.stderr.text || '').trim()
+        if (result.exitCode !== 0) return { ok: false, error: (err || out || '卸载失败').slice(0, 500) }
+        return { ok: true, output: out.slice(0, 500) }
+      } catch (e) {
+        return { ok: false, error: String(e && e.message || e).slice(0, 300) }
+      }
+    })
+
+    harness.handle('update-plugin', async (args) => {
+      const pkg = args && typeof args.pkg === 'string' ? args.pkg.trim() : ''
+      if (!shell || !pkg) return { ok: false, error: '缺少包名' }
+      const profile = process.env.DSH_PROFILE || 'web'
+      try {
+        const rmCmd = 'dsh plugin --profile ' + profile + ' rm ' + pkg
+        await shell.run(shell.resolve({ command: rmCmd, timeoutMs: 60000 }))
+        const addCmd = 'dsh plugin --profile ' + profile + ' add ' + pkg
+        const spec = shell.resolve({ command: addCmd, timeoutMs: 120000 })
+        const result = await shell.run(spec)
+        const out = (result.stdout.text || '').trim()
+        const err = (result.stderr.text || '').trim()
+        if (result.exitCode !== 0) return { ok: false, error: (err || out || '更新失败').slice(0, 500) }
+        return { ok: true, output: out.slice(0, 500) }
+      } catch (e) {
+        return { ok: false, error: String(e && e.message || e).slice(0, 300) }
+      }
+    })
+
+    harness.handle('search-plugins', async (args) => {
+      const query = args && typeof args.query === 'string' ? args.query.trim() : ''
+      if (!shell) return { ok: false, error: '不可用' }
+      if (!query) return { ok: true, results: [] }
+      try {
+        const cmd = 'npm search ' + query + ' --json 2>/dev/null | head -c 10000'
+        const spec = shell.resolve({ command: cmd, timeoutMs: 30000 })
+        const result = await shell.run(spec)
+        if (result.exitCode !== 0) return { ok: true, results: [] }
+        const text = (result.stdout.text || '').trim()
+        if (!text) return { ok: true, results: [] }
+        const items = JSON.parse(text)
+        const results = (Array.isArray(items) ? items : []).slice(0, 20).map((item) => ({
+          name: item.name || '',
+          version: item.version || '',
+          description: item.description || '',
+          keywords: item.keywords || [],
+          repository: item.repository && item.repository.url ? item.repository.url : '',
+          author: item.author && item.author.name ? item.author.name : (typeof item.author === 'string' ? item.author : ''),
+          score: item.score && item.score.final ? item.score.final : 0,
+        }))
+        return { ok: true, results: results }
+      } catch (e) {
+        return { ok: true, results: [] }
+      }
+    })
+
     function getStatePayload() {
       return {
         version: state.version,
