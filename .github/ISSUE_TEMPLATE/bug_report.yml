@@ -1,0 +1,125 @@
+name: Bug Report
+description: 报告插件中的问题
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢你提交 Bug Report！请尽可能详细地填写以下信息，以便我们快速定位和修复问题。
+
+        > **注意：** 请先确认你使用的是最新版本。旧版本的问题可能已修复。
+
+  - type: input
+    id: version
+    attributes:
+      label: 插件版本
+      description: "请在 DSH 中查看插件版本号（package.json 中的 version）"
+      placeholder: "例如: 1.1.0"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 运行平台
+      options:
+        - Windows
+        - macOS
+        - Linux
+        - Docker
+        - 其他
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: 浏览器（如涉及前端界面）
+      options:
+        - Chrome
+        - Firefox
+        - Edge
+        - Safari
+        - 不涉及前端
+        - 其他
+    validations:
+      required: false
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 清晰地描述你遇到了什么问题
+      placeholder: "例如：点击余额查询后页面无响应，控制台报错 xxx"
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望行为
+      description: 你期望发生什么？
+      placeholder: "例如：应该显示当前余额和今日用量统计"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际行为
+      description: 实际发生了什么？
+      placeholder: "例如：页面空白，或显示错误数据"
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 请提供最小复现步骤
+      placeholder: |
+        1. 打开 DSH 面板
+        2. 点击「余额查询」
+        3. 等待 5 秒
+        4. 出现错误
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志 / 控制台输出
+      description: 如果有错误日志，请粘贴在此处。按 F12 打开开发者工具查看 Console。
+      render: shell
+      placeholder: "粘贴日志内容..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图
+      description: 如果适用，请添加截图帮助说明问题（拖拽图片到此处即可上传）
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充信息
+      description: 任何你认为有助于解决问题的额外信息
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: 提交前确认
+      options:
+        - label: 我已搜索过现有 Issues，没有重复的问题
+          required: true
+        - label: 我已阅读 README 和文档
+          required: true
+        - label: 我使用的是最新版本（或注明了使用的版本）
+          required: true

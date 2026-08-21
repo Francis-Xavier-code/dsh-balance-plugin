@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 使用问题 / Discussion
+    url: https://github.com/Francis-Xavier-code/dsh-balance-plugin/discussions
+    about: 使用问题、配置疑问、经验分享请到 Discussions 提问，Issue 仅用于 Bug 报告和功能请求。
+  - name: 阅读文档
+    url: https://github.com/Francis-Xavier-code/dsh-balance-plugin/blob/main/README.zh-CN.md
+    about: 提交 Issue 前请先阅读文档，许多常见问题已有解答。
