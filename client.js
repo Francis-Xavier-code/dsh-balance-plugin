@@ -106,16 +106,26 @@ return {
 `)
 
     const POLL_MS = 15000
+    const IDLE_MS = 60000
 
     function useBalanceState() {
       const pair = React.useState(null)
       const snapshot = pair[0]
       const setSnapshot = pair[1]
+      const versionRef = React.useRef(0)
+      const idleRef = React.useRef(0)
       React.useEffect(() => {
         let alive = true
         const tick = () => {
           host.call('get-state', {}).then((value) => {
-            if (alive && value && typeof value === 'object') setSnapshot(value)
+            if (!alive || !value || typeof value !== 'object') return
+            if (value.version === versionRef.current && idleRef.current < 3) {
+              idleRef.current += 1
+              return
+            }
+            versionRef.current = value.version || 0
+            idleRef.current = 0
+            setSnapshot(value)
           }).catch(() => {})
         }
         tick()
@@ -129,11 +139,20 @@ return {
       const pair = React.useState(null)
       const snapshot = pair[0]
       const setSnapshot = pair[1]
+      const versionRef = React.useRef(0)
+      const idleRef = React.useRef(0)
       React.useEffect(() => {
         let alive = true
         const tick = () => {
           host.call('get-usage', { range: range }).then((value) => {
-            if (alive && value && typeof value === 'object') setSnapshot(value)
+            if (!alive || !value || typeof value !== 'object') return
+            if (value.version === versionRef.current && idleRef.current < 3) {
+              idleRef.current += 1
+              return
+            }
+            versionRef.current = value.version || 0
+            idleRef.current = 0
+            setSnapshot(value)
           }).catch(() => {})
         }
         tick()
