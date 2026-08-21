@@ -201,6 +201,16 @@ A: Ensure you're running PowerShell as Administrator. If execution policy blocks
 
 ---
 
+## 👥 Contributors
+
+<a href="https://github.com/Francis-Xavier-code/dsh-balance-plugin/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Francis-Xavier-code/dsh-balance-plugin" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
+
+---
+
 ## 📄 License
 
 [MIT](LICENSE) © 2026 [Black Cat (Francis-Xavier-code)](https://github.com/Francis-Xavier-code)
