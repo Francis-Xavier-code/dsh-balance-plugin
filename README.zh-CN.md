@@ -201,6 +201,16 @@ A：确保以管理员身份运行 PowerShell。如果执行策略阻止脚本�
 
 ---
 
+## 👥 贡献者
+
+<a href="https://github.com/Francis-Xavier-code/dsh-balance-plugin/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=Francis-Xavier-code/dsh-balance-plugin" />
+</a>
+
+Made with [contrib.rocks](https://contrib.rocks).
+
+---
+
 ## 📄 许可
 
 [MIT](LICENSE) © 2026 [Black Cat (Francis-Xavier-code)](https://github.com/Francis-Xavier-code)
