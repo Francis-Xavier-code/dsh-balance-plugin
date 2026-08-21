@@ -250,9 +250,6 @@ return {
       const data = pair[0]
       const setData = pair[1]
       const [seq, setSeq] = React.useState(0)
-      const [searchQuery, setSearchQuery] = React.useState('')
-      const [searchResults, setSearchResults] = React.useState([])
-      const [searching, setSearching] = React.useState(false)
       const [toast, setToast] = React.useState('')
       const [busyId, setBusyId] = React.useState('')
       const [featured, setFeatured] = React.useState([])
@@ -275,14 +272,6 @@ return {
         }).catch(() => {}).finally(() => { if (alive) setFeaturedLoading(false) })
         return () => { alive = false }
       }, [])
-      function handleSearch() {
-        const q = searchQuery.trim()
-        if (!q) return
-        setSearching(true)
-        host.call('search-plugins', { query: q }).then((v) => {
-          if (v && v.ok) setSearchResults(v.results || [])
-        }).catch(() => {}).finally(() => setSearching(false))
-      }
       function handleInstall(pkg) {
         if (!pkg || busyId) return
         setBusyId(pkg)
@@ -290,8 +279,6 @@ return {
         host.call('install-plugin', { pkg: pkg }).then((v) => {
           if (v && v.ok) {
             showToast('✅ ' + pkg + ' 安装成功')
-            setSearchResults([])
-            setSearchQuery('')
             setSeq((n) => n + 1)
           } else {
             showToast('❌ 安装失败：' + (v && v.error || '未知错误'))
@@ -325,16 +312,6 @@ return {
           }
         }).catch(() => showToast('❌ 更新失败')).finally(() => setBusyId(''))
       }
-      function openRepo(plugin) {
-        let url = plugin.repository || ''
-        if (url) {
-          url = url.replace(/^git\+/, '').replace(/\.git$/, '')
-        } else {
-          const id = plugin.id || ''
-          url = 'https://github.com/' + id.replace(/^@[^/]+\//, '')
-        }
-        if (url) window.open(url, '_blank', 'noopener')
-      }
       const children = []
       children.push(React.createElement('div', { key: 'title', className: 'bmon-title' }, '插件管理'))
       if (!data) {
@@ -364,7 +341,6 @@ return {
         const actions = []
         actions.push(React.createElement('button', { key: 'dir', type: 'button', disabled: !plugin.path, onClick: () => { host.call('open-plugin-dir', { id: plugin.id }).then((v) => { if (v && v.error) console.log('[余额监控] open dir:', v.error) }).catch(() => {}) } }, '📁 目录'))
         if (!plugin.official) {
-          actions.push(React.createElement('button', { key: 'repo', type: 'button', onClick: () => openRepo(plugin) }, '🔗 仓库'))
           actions.push(React.createElement('button', { key: 'update', type: 'button', className: 'bmon-pg-update', disabled: !!busyId, onClick: () => handleUpdate(plugin.id) }, busyId === plugin.id ? '⏳…' : '🔄 更新'))
           actions.push(React.createElement('button', { key: 'uninstall', type: 'button', className: 'bmon-pg-danger', disabled: !!busyId, onClick: () => handleUninstall(plugin.id) }, '🗑 卸载'))
         }
@@ -409,7 +385,6 @@ return {
       }
       children.push(React.createElement('div', { key: 'market', className: 'bmon-pg-market' },
         React.createElement('div', { className: 'bmon-pg-market-title' }, '🏪 插件市场'),
-        React.createElement('div', { className: 'bmon-hint', style: { marginBottom: 8 } }, '搜索 npm 注册表中的 DSH 插件（关键词：deepseek-harness / dsh / cordis）'),
         featuredLoading ? React.createElement('div', { className: 'bmon-hint', style: { marginBottom: 8 } }, '正在加载推荐插件…') : (featured.length ? React.createElement('div', { className: 'bmon-pg-featured' },
           ...featured.map((item) => React.createElement('div', { key: item.name, className: 'bmon-pg-feat-card' },
             React.createElement('div', { className: 'bmon-pg-feat-head' },
@@ -419,36 +394,10 @@ return {
             React.createElement('div', { className: 'bmon-pg-feat-desc' }, item.description || ''),
             React.createElement('div', { className: 'bmon-pg-feat-actions' },
               React.createElement('button', { type: 'button', className: 'bmon-pg-primary', disabled: !!busyId, onClick: () => handleInstall(item.name) }, busyId === item.name ? '⏳…' : '📥 安装'),
-              item.repository ? React.createElement('a', { href: item.repository, target: '_blank', rel: 'noopener' }, '🔗 仓库') : null,
             ),
           ))
-        ) : null),
-        React.createElement('div', { className: 'bmon-pg-search' },
-          React.createElement('input', { type: 'text', className: 'bmon-input', placeholder: '输入关键词搜索…', value: searchQuery, onChange: (e) => setSearchQuery(e.target.value), onKeyDown: (e) => { if (e.key === 'Enter') handleSearch() } }),
-          React.createElement('button', { type: 'button', className: 'bmon-primary', disabled: searching || !searchQuery.trim(), onClick: handleSearch }, searching ? '搜索中…' : '🔍 搜索'),
-        ),
+        ) : !featuredLoading && !featured.length ? React.createElement('div', { key: 'empty-market', className: 'bmon-u-empty' }, '暂无推荐插件') : null),
       ))
-      if (searchResults.length) {
-        children.push(React.createElement('div', { key: 'sresults', className: 'bmon-pg-grid' },
-          ...searchResults.map((item) =>
-            React.createElement('div', { key: item.name, className: 'bmon-pg-card' },
-              React.createElement('div', { className: 'bmon-pg-card-name' },
-                React.createElement('span', null, item.name),
-                React.createElement('span', { className: 'bmon-badge', style: { fontSize: 9 } }, item.version),
-              ),
-              React.createElement('div', { className: 'bmon-pg-card-desc' }, item.description || '无描述'),
-              React.createElement('div', { className: 'bmon-pg-card-meta' },
-                item.author ? React.createElement('span', null, '👤 ' + item.author) : null,
-                item.score > 0 ? React.createElement('span', null, '⭐ ' + (item.score * 100).toFixed(0) + '%') : null,
-              ),
-              React.createElement('div', { className: 'bmon-pg-card-actions' },
-                React.createElement('button', { type: 'button', className: 'bmon-pg-primary', disabled: !!busyId, onClick: () => handleInstall(item.name) }, busyId === item.name ? '⏳…' : '📥 安装'),
-                item.repository ? React.createElement('a', { href: item.repository.replace(/^git\+/, '').replace(/\.git$/, ''), target: '_blank', rel: 'noopener' }, '🔗 仓库') : null,
-              ),
-            )
-          )
-        ))
-      }
       if (toast) {
         children.push(React.createElement('div', { key: 'toast', className: 'bmon-pg-toast' + (toast ? ' show' : '') }, toast))
       }
