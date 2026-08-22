@@ -3,6 +3,7 @@
 # 用法:
 #   curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh | bash
 # 可选: 指定 profile（默认 web）: DSH_PROFILE=tui curl -fsSL ... | bash
+# 可选: 强制更新: UPDATE=1 curl -fsSL ... | bash
 # 可选: 显式指定 registry 包（默认走 github: 协议，避免与 npm 上同名包混淆）:
 #   PKG=@Francis-Xavier-code/dsh-balance-plugin curl -fsSL ... | bash
 set -euo pipefail
@@ -14,11 +15,41 @@ UPDATE="${UPDATE:-0}"
 GITHUB_SRC="github:Francis-Xavier-code/dsh-balance-plugin"
 TARBALL="https://github.com/Francis-Xavier-code/dsh-balance-plugin/archive/refs/heads/main.tar.gz"
 PROFILE="${DSH_PROFILE:-web}"
-PATCH="$HOME/.dsh/cordis.patch.yml"
+REMOTE_VERSION_URL="https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/package.json"
 
 if ! command -v dsh >/dev/null 2>&1; then
   echo "✗ 未找到 dsh 命令（应位于 ~/.local/bin/dsh）" >&2
   exit 1
+fi
+
+# 获取本地已安装版本
+getLocalVersion() {
+  local pkgJson="$HOME/.dsh/profiles/$PROFILE/node_modules/dsh-balance-plugin/package.json"
+  if [ -f "$pkgJson" ]; then
+    grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' "$pkgJson" 2>/dev/null | head -1 | sed 's/.*"\([0-9][0-9.]*\)".*/\1/' || echo ""
+  else
+    echo ""
+  fi
+}
+
+# 获取远程最新版本
+getRemoteVersion() {
+  curl -fsSL "$REMOTE_VERSION_URL" 2>/dev/null | grep -o '"version"[[:space:]]*:[[:space:]]*"[^"]*"' | head -1 | sed 's/.*"\([0-9][0-9.]*\)".*/\1/' || echo ""
+}
+
+LOCAL_VERSION=$(getLocalVersion)
+echo "→ 当前 profile: $PROFILE"
+if [ -n "$LOCAL_VERSION" ]; then
+  echo "→ 已安装版本: $LOCAL_VERSION"
+fi
+
+# 检查远程版本并提示更新
+if [ "$UPDATE" != "1" ] && [ -n "$LOCAL_VERSION" ]; then
+  REMOTE_VERSION=$(getRemoteVersion)
+  if [ -n "$REMOTE_VERSION" ] && [ "$LOCAL_VERSION" != "$REMOTE_VERSION" ]; then
+    echo "! 发现新版本: $REMOTE_VERSION（当前 $LOCAL_VERSION）"
+    echo "  运行 UPDATE=1 bash 更新，或在 DSH 插件面板中点击「检查更新」"
+  fi
 fi
 
 # pnpm 可能因 build-scripts 策略（ERR_PNPM_IGNORED_BUILDS）返回非零但安装已成功；
@@ -71,6 +102,12 @@ fi
 # "duplicate loader entry id: dsh-balance-plugin" 导致 Host 启动崩溃。
 # 故这里仅校验 profile 已含本插件，不再额外写入 patch。
 
-echo "✔ 安装完成！请重启 DeepSeek Harness 生效。"
+NEW_VERSION=$(getLocalVersion)
+if [ -n "$NEW_VERSION" ]; then
+  echo "✔ 安装完成！当前版本: $NEW_VERSION"
+else
+  echo "✔ 安装完成！"
+fi
+echo "  请重启 DeepSeek Harness 生效。"
 echo "  验证组合: dsh --profile $PROFILE --dump-config | grep dsh-balance-plugin"
 echo "  卸载: curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/uninstall.sh | bash"

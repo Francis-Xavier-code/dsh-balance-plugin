@@ -60,6 +60,8 @@ body:
     attributes:
       label: 提交前确认（必填）
       options:
+        - label: 我已阅读 [贡献指南](https://github.com/Francis-Xavier-code/dsh-balance-plugin/blob/main/.github/CONTRIBUTING.md)，了解如何正确提交 Issue
+          required: true
         - label: 我已搜索过现有 Issues，没有重复的功能请求
           required: true
         - label: 我已阅读 README 和文档，了解现有功能
