@@ -434,6 +434,7 @@ return {
 
     function DockReadout() {
       const snapshot = useBalanceState()[0]
+      if (snapshot && snapshot.showDock === false) return null
       const low = snapshot && snapshot.last ? snapshot.last.low : []
       const failed = snapshot && snapshot.last ? snapshot.last.accounts.filter((a) => !a.ok).length : 0
       let text = '余额查询中…'
@@ -476,6 +477,7 @@ return {
           thresholdCny: String(snapshot.thresholdCny),
           thresholdUsd: String(snapshot.thresholdUsd),
           intervalMs: String(snapshot.intervalMs),
+          showDock: snapshot.showDock !== false,
         })
       }, [snapshot, draft])
 
@@ -498,6 +500,7 @@ return {
           thresholdCny: Number(draft.thresholdCny) || 0,
           thresholdUsd: Number(draft.thresholdUsd) || 0,
           intervalMs: Number(draft.intervalMs) || 300000,
+          showDock: draft.showDock,
         }).then((value) => {
           if (value && typeof value === 'object') setSnapshot(value)
           setDraft((d) => ({ ...d, accounts: d.accounts.map((a) => ({ ...a, key: '', clear: false })) }))
@@ -565,6 +568,13 @@ return {
                 React.createElement('option', { value: '300000' }, '5 分钟'),
                 React.createElement('option', { value: '900000' }, '15 分钟'),
                 React.createElement('option', { value: '1800000' }, '30 分钟'),
+              )),
+          ))
+          configChildren.push(React.createElement('div', { key: 'dockopt', className: 'bmon-row' },
+            React.createElement('label', { className: 'bmon-field' }, '底部余额栏',
+              React.createElement('select', { className: 'bmon-input', value: draft.showDock ? '1' : '0', onChange: (e) => setDraft((d) => ({ ...d, showDock: e.target.value === '1' })) },
+                React.createElement('option', { value: '1' }, '显示'),
+                React.createElement('option', { value: '0' }, '隐藏'),
               )),
           ))
           configChildren.push(React.createElement('div', { key: 'actions', className: 'bmon-actions' },

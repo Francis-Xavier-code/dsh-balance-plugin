@@ -11,6 +11,7 @@ return {
       thresholdCny: 10,
       thresholdUsd: 2,
       intervalMs: 300000,
+      showDock: true,
       last: null,
       pollError: null,
       polling: false,
@@ -695,6 +696,7 @@ return {
         thresholdCny: state.thresholdCny,
         thresholdUsd: state.thresholdUsd,
         intervalMs: state.intervalMs,
+        showDock: state.showDock,
         polling: state.polling,
         pollError: state.pollError,
         last: state.last,
@@ -728,6 +730,9 @@ return {
       if (typeof input.intervalMs === 'number' && Number.isFinite(input.intervalMs)) {
         state.intervalMs = Math.min(3600000, Math.max(10000, Math.round(input.intervalMs)))
         restartInterval()
+      }
+      if (typeof input.showDock === 'boolean') {
+        state.showDock = input.showDock
       }
       await pollAll()
       return getStatePayload()
