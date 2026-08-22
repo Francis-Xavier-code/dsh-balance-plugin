@@ -11,6 +11,7 @@ Host（Node.js 进程）
 ├─ 三方插件：clientModules.graph() + clientPath() + open -R 定位
 ├─ RPC 路由：/bmon/api/get-state · refresh · recharge · set-config ·
 │            get-usage · list-plugins · open-plugin-dir · check-updates · update-plugin
+│            install-plugin · uninstall-plugin · search-plugins · get-plugin-info · featured-plugins
 ├─ 持久化：配置自动保存到 config.json 文件
 └─ 模型工具：query_api_quota
 
@@ -27,6 +28,7 @@ Client（浏览器）
 | --- | --- |
 | `get-state` | 获取完整状态（余额、配置、轮询状态等） |
 | `refresh` | 强制刷新余额 |
+| `recharge` | 获取充值链接 |
 | `set-config` | 更新配置（账户、阈值、间隔等），自动持久化 |
 | `get-usage` | 获取用量统计（1d/7d/30d/all） |
 | `list-plugins` | 列出已安装插件（区分官方/三方） |
@@ -34,7 +36,7 @@ Client（浏览器）
 | `install-plugin` | 安装插件（调用 `dsh plugin add`） |
 | `uninstall-plugin` | 卸载插件（调用 `dsh plugin rm`） |
 | `update-plugin` | 更新插件（先 rm 再 add） |
-| `check-updates` | 检查 npm 新版本 |
+| `check-updates` | 检查 GitHub 上的新版本 |
 | `search-plugins` | npm 搜索 |
 | `get-plugin-info` | 包详情 |
 | `featured-plugins` | 推荐插件列表 |

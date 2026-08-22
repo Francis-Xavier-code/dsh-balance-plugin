@@ -55,10 +55,11 @@ irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/mai
 
 ```bash
 # macOS / Linux
-UPDATE=1 curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh | UPDATE=1 bash
 
 # Windows PowerShell
-$env:UPDATE='1'; irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 | iex
+# 然后在 PowerShell 中运行: $env:UPDATE='1'; irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 | iex
 ```
 
 或在 DSH 面板内点击「检查更新」→「更新」（推荐）。

@@ -55,10 +55,11 @@ irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/mai
 
 ```bash
 # macOS / Linux
-UPDATE=1 curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh | UPDATE=1 bash
 
 # Windows PowerShell
-$env:UPDATE='1'; irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 | iex
+irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 | iex
+# Then in PowerShell run: $env:UPDATE='1'; irm https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.ps1 | iex
 ```
 
 Or click "Check Update" → "Update" in the DSH plugin panel (recommended).
