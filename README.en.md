@@ -6,7 +6,7 @@
 
 [![license](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![platform](https://img.shields.io/badge/platform-DeepSeek%20Harness-8d7ce4.svg)](https://github.com/Francis-Xavier-code/dsh-balance-plugin)
-[![version](https://img.shields.io/badge/version-1.2.0-b08427.svg)](https://github.com/Francis-Xavier-code/dsh-balance-plugin)
+[![version](https://img.shields.io/badge/version-1.3.0-b08427.svg)](https://github.com/Francis-Xavier-code/dsh-balance-plugin)
 
 [✨ Features](#-features) · [📥 Install](#-install) · [🖼 Screenshots](#-screenshots) · [❓ FAQ](#-faq) · [📖 Docs](#-docs) · [🌐 中文](README.md)
 
