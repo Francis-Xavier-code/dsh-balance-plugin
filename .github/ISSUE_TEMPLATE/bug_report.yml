@@ -6,23 +6,39 @@ body:
   - type: markdown
     attributes:
       value: |
-        感谢你提交 Bug Report！请尽可能详细地填写以下信息，以便我们快速定位和修复问题。
+        感谢你提交 Bug Report！**请务必详细填写以下信息，否则Issue将被关闭。**
 
-        > **注意：** 请先确认你使用的是最新版本。旧版本的问题可能已修复。
+        > **重要提醒：**
+        > - 请先更新到最新版本：`curl -fsSL https://raw.githubusercontent.com/Francis-Xavier-code/dsh-balance-plugin/main/install.sh | UPDATE=1 bash`
+        > - 旧版本的问题可能已修复，请勿提交过期版本的Issue
+        > - 截图是必须的，没有截图的Issue将不予处理
 
   - type: input
     id: version
     attributes:
-      label: 插件版本
-      description: "请在 DSH 中查看插件版本号（package.json 中的 version）"
-      placeholder: "例如: 1.1.0"
+      label: 插件版本（必填）
+      description: |
+        在 DSH 插件管理界面查看版本号，或运行 `cat ~/.dsh/profiles/web/node_modules/dsh-balance-plugin/package.json | grep version`
+        **注意：必须是 1.x.x 格式的版本号，0.x.x 是旧版本，请先更新**
+      placeholder: "例如: 1.2.0"
+    validations:
+      required: true
+
+  - type: input
+    id: dsh_version
+    attributes:
+      label: DSH 版本（必填）
+      description: |
+        运行 `dsh --version` 查看版本号
+        **注意：DSH 版本过旧可能导致插件无法正常工作**
+      placeholder: "例如: 1.0.0"
     validations:
       required: true
 
   - type: dropdown
     id: platform
     attributes:
-      label: 运行平台
+      label: 运行平台（必填）
       options:
         - Windows
         - macOS
@@ -49,7 +65,7 @@ body:
   - type: textarea
     id: description
     attributes:
-      label: 问题描述
+      label: 问题描述（必填）
       description: 清晰地描述你遇到了什么问题
       placeholder: "例如：点击余额查询后页面无响应，控制台报错 xxx"
     validations:
@@ -58,7 +74,7 @@ body:
   - type: textarea
     id: expected
     attributes:
-      label: 期望行为
+      label: 期望行为（必填）
       description: 你期望发生什么？
       placeholder: "例如：应该显示当前余额和今日用量统计"
     validations:
@@ -67,7 +83,7 @@ body:
   - type: textarea
     id: actual
     attributes:
-      label: 实际行为
+      label: 实际行为（必填）
       description: 实际发生了什么？
       placeholder: "例如：页面空白，或显示错误数据"
     validations:
@@ -76,7 +92,7 @@ body:
   - type: textarea
     id: steps
     attributes:
-      label: 复现步骤
+      label: 复现步骤（必填）
       description: 请提供最小复现步骤
       placeholder: |
         1. 打开 DSH 面板
@@ -99,10 +115,15 @@ body:
   - type: textarea
     id: screenshots
     attributes:
-      label: 截图
-      description: 如果适用，请添加截图帮助说明问题（拖拽图片到此处即可上传）
+      label: 截图（必填）
+      description: |
+        **必须提供截图！** 拖拽图片到此处即可上传。
+        - 请提供设置面板的截图
+        - 请提供问题发生时的截图
+        - 如果是重启后问题，请提供重启前后的对比截图
+        **没有截图的Issue将被关闭**
     validations:
-      required: false
+      required: true
 
   - type: textarea
     id: extra
@@ -115,11 +136,13 @@ body:
   - type: checkboxes
     id: terms
     attributes:
-      label: 提交前确认
+      label: 提交前确认（必填）
       options:
         - label: 我已搜索过现有 Issues，没有重复的问题
           required: true
         - label: 我已阅读 README 和文档
           required: true
-        - label: 我使用的是最新版本（或注明了使用的版本）
+        - label: 我已更新到最新版本（版本号为 1.x.x 格式）
+          required: true
+        - label: 我已提供截图作为证据
           required: true

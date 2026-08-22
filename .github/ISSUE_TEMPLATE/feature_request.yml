@@ -6,12 +6,14 @@ body:
   - type: markdown
     attributes:
       value: |
-        感谢你的功能建议！请描述你希望添加的功能。
+        感谢你的功能建议！**请详细描述你希望添加的功能，否则Issue可能被关闭。**
+
+        > **注意：** 截图或示意图能帮助我们更好地理解你的需求。
 
   - type: textarea
     id: problem
     attributes:
-      label: 问题 / 痛点
+      label: 问题 / 痛点（必填）
       description: 这个功能解决了什么问题？或者你遇到了什么不便？
       placeholder: "例如：每次都要手动刷新才能看到最新余额，很不方便"
     validations:
@@ -20,7 +22,7 @@ body:
   - type: textarea
     id: solution
     attributes:
-      label: 期望的解决方案
+      label: 期望的解决方案（必填）
       description: 你希望这个功能是什么样的？
       placeholder: "例如：希望余额能自动定时刷新，比如每 5 分钟更新一次"
     validations:
@@ -36,17 +38,29 @@ body:
       required: false
 
   - type: textarea
+    id: screenshots
+    attributes:
+      label: 截图 / 示意图
+      description: |
+        如果有参考截图或示意图，请提供。
+        拖拽图片到此处即可上传。
+    validations:
+      required: false
+
+  - type: textarea
     id: extra
     attributes:
       label: 补充信息
-      description: 任何有助于理解这个需求的额外信息、截图、参考链接等
+      description: 任何有助于理解这个需求的额外信息、参考链接等
     validations:
       required: false
 
   - type: checkboxes
     id: terms
     attributes:
-      label: 提交前确认
+      label: 提交前确认（必填）
       options:
         - label: 我已搜索过现有 Issues，没有重复的功能请求
+          required: true
+        - label: 我已阅读 README 和文档，了解现有功能
           required: true
